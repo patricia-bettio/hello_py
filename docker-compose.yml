@@ -1,0 +1,52 @@
+version: '3'
+  #we will create then folders: dbscripts, env, provisioning.sql, dockerfile, entrypoint.sh
+services:
+
+  db:
+    image: postgres:13-alpine
+    volumes:
+      #right side of : is path inside docker container
+      #left side of : is outside docker container
+      - postgres_data:/var/lib/postgresql/data/
+      #pode chamar doq quiser essa pasta:
+      - ./dbscripts/:/dbscripts/
+      #the environment file
+    env_file:
+      - env
+    networks:
+      - dbnet
+        #from video 5, we create the app section here
+  app:
+    image: hello:latest
+    volumes:
+      - .:/app/
+    env_file:
+      - env
+    networks:
+      - dbnet
+      - webnet
+    depends_on:
+      - db
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - 8000:80
+    volumes:
+      - ./config/nginx/conf.d:/etc/nginx/conf.d
+    networks:
+      - webnet
+    depends_on:
+      - app
+
+volumes:
+  #we declare what we mentioned up there:
+  postgres_data:
+
+
+networks:
+  dbnet:
+    driver: bridge
+  webnet:
+    driver: bridge
+
